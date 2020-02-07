@@ -1,19 +1,22 @@
 import tensorflow as tf
 import json
+import os
+from object_detection.utils import dataset_util
 
-def create_tf_example(example, image_file):
+def create_tf_example(ann_json, img_subdir, img_filename):
 
-    with open(example) as f:
+    with open(ann_json) as f:
         data = json.load(f)
 
+    img_path = os.path.join(img_subdir, img_filename)
     with tf.gfile.GFile(img_path, 'rb') as fid:
         encoded_png = fid.read()
 
     height = data['size'].get('height') # Image height
     width = data['size'].get('width') # Image width
-    filename = image_file # Filename of the image. Empty if image is not from file
+    filename = img_filename # Filename of the image. Empty if image is not from file
     encoded_image_data = encoded_png # Encoded image bytes
-    image_format = b'png # b'jpeg' or b'png'
+    image_format = b'png' # b'jpeg' or b'png'
 
     xmins = [] # List of normalized left x coordinates in bounding box (1 per box)
     xmaxs = [] # List of normalized right x coordinates in bounding box
@@ -30,7 +33,7 @@ def create_tf_example(example, image_file):
         xmaxs.append(dim[1][0]/width)
         ymins.append(dim[0][1]/height)
         ymaxs.append(dim[1][1]/height)
-        classes_text.append(['power_cell')
+        classes_text.append(['power_cell'])
         classes.append(0)
 
     tf_example = tf.train.Example(features=tf.train.Features(feature={
@@ -50,14 +53,15 @@ def create_tf_example(example, image_file):
 
     return tf_example
 
-def main(_):
-    writer = tf.python_io.TFRecordWriter(FLAGS.output_path)
-    # TODO(user): Write code to read in your dataset to examples variable
+#writer = tf.python_io.TFRecordWriter()
+# TODO(user): Write code to read in your dataset to examples variable
+# TODO: make image folder called 'images' and annotations folder called 'ann' to replace 'data' folder
+# TODO: follow this link https://github.com/tensorflow/models/blob/master/research/delf/INSTALL_INSTRUCTIONS.md
 
-    for file in os.listdir(os.fsencode('data/')):
-        filename = os.fsdecode(file)
+for file in os.listdir(os.fsencode('images/')):
+    img_filename = os.fsdecode(file)
+    ann_path = 'ann/' + img_filename.replace('png', 'json')
+    tf_example = create_tf_example(ann_path, 'images', img_filename)
+  #writer.write(tf_example.SerializeToString())
 
-    for example in examples:
-        tf_example = create_tf_example(example)
-        writer.write(tf_example.SerializeToString())
-    writer.close()
+#writer.close()
